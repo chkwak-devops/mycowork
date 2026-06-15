@@ -12,6 +12,10 @@ import { CheckCircle, FileText, Clock, Activity, AlertTriangleIcon } from "lucid
 import { PriorityChart } from "./priority-chart";
 import { CreateConfluencePageModal } from "@/components/confluence/create-page-modal";
 import type { JiraIssue, JiraUser } from "@/lib/jira";
+import { CalendarView } from "./calendar-view";
+import type { CalendarIssue } from "@/app/api/jira/calendar/route";
+import { RecentConfluencePages } from "./recent-confluence-pages";
+import type { ConfluenceRecentPage } from "@/lib/confluence";
 
 interface DashboardData {
   user: JiraUser;
@@ -39,6 +43,12 @@ export function DashboardClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth() + 1);
+  const [calendarIssues, setCalendarIssues] = useState<CalendarIssue[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [confluencePages, setConfluencePages] = useState<ConfluenceRecentPage[]>([]);
+  const [confluenceLoading, setConfluenceLoading] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -59,9 +69,67 @@ export function DashboardClient() {
     }
   }, []);
 
+  const fetchConfluencePages = useCallback(async () => {
+    setConfluenceLoading(true);
+    try {
+      const res = await fetch("/api/confluence/my-pages");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const json = await res.json();
+      setConfluencePages(json.pages ?? []);
+    } catch (e) {
+      console.error("Failed to fetch confluence pages:", e);
+      setConfluencePages([]);
+    } finally {
+      setConfluenceLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConfluencePages();
+  }, [fetchConfluencePages]);
+
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  const fetchCalendar = useCallback(async (year: number, month: number) => {
+    setCalendarLoading(true);
+    try {
+      const res = await fetch(`/api/jira/calendar?year=${year}&month=${month}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setCalendarIssues(json.issues ?? []);
+    } catch (e) {
+      console.error("Failed to fetch calendar data:", e);
+      setCalendarIssues([]);
+    } finally {
+      setCalendarLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCalendar(calendarYear, calendarMonth);
+  }, [calendarYear, calendarMonth, fetchCalendar]);
+
+  const handlePrevMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      if (prev === 1) {
+        setCalendarYear((y) => y - 1);
+        return 12;
+      }
+      return prev - 1;
+    });
+  }, []);
+
+  const handleNextMonth = useCallback(() => {
+    setCalendarMonth((prev) => {
+      if (prev === 12) {
+        setCalendarYear((y) => y + 1);
+        return 1;
+      }
+      return prev + 1;
+    });
+  }, []);
 
   const overdueCount = data?.dueSoonIssues.filter(
     (i) => i.fields.duedate && new Date(i.fields.duedate) < new Date()
@@ -169,6 +237,21 @@ export function DashboardClient() {
               />
             </div>
 
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-primary/40" />
+                <h3 className="text-sm font-medium text-muted-foreground">월별 캘린더</h3>
+              </div>
+              <CalendarView
+                issues={calendarIssues}
+                loading={calendarLoading}
+                year={calendarYear}
+                month={calendarMonth}
+                onPrevMonth={handlePrevMonth}
+                onNextMonth={handleNextMonth}
+              />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <IssueListCard
                 title="내 미완료 이슈"
@@ -191,11 +274,9 @@ export function DashboardClient() {
                 jiraBaseUrl={JIRA_BASE_URL}
                 showUpdated
               />
-              <IssueListCard
-                title="최근 활동 이슈"
-                issues={data.recentActivityIssues}
-                jiraBaseUrl={JIRA_BASE_URL}
-                showUpdated
+              <RecentConfluencePages
+                pages={confluencePages}
+                loading={confluenceLoading}
               />
             </div>
 
