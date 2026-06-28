@@ -42,3 +42,5 @@ next-env.d.ts
 .playwright-mcp/
 confluence_.md
 dashboard-*.png
+# sisyphus tool state
+/.sisyphus/
