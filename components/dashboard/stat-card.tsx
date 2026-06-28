@@ -5,14 +5,19 @@ interface StatCardProps {
   title: string;
   value: number;
   sub?: string;
-  icon: LucideIcon;
   iconColor?: string;
+  onClick?: () => void;
   accentColor?: string;
 }
 
-export function StatCard({ title, value, sub, icon: Icon, iconColor = "text-muted-foreground", accentColor = "bg-primary/10" }: StatCardProps) {
+export function StatCard({ title, value, sub, icon: Icon, iconColor = "text-muted-foreground", accentColor = "bg-primary/10", onClick }: StatCardProps & { icon: LucideIcon }) {
   return (
-    <Card className="relative overflow-hidden transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] group">
+    <Card
+      onClick={onClick}
+      className={`relative overflow-hidden transition-transform duration-150 group ${
+        onClick ? "cursor-pointer hover:scale-[1.02] active:scale-[0.98]" : ""
+      }`}
+    >
       <div className={`absolute inset-y-0 left-0 w-0.5 ${accentColor.replace("text-", "bg-").replace("text", "bg")}`} />
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>

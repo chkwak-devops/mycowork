@@ -16,6 +16,8 @@ import { CalendarView } from "./calendar-view";
 import type { CalendarIssue } from "@/app/api/jira/calendar/route";
 import { RecentConfluencePages } from "./recent-confluence-pages";
 import type { ConfluenceRecentPage } from "@/lib/confluence";
+import { StatIssueModal } from "./stat-issue-modal";
+import { ThemeSelector } from "@/components/ui/theme-selector";
 
 interface DashboardData {
   user: JiraUser;
@@ -49,6 +51,7 @@ export function DashboardClient() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [confluencePages, setConfluencePages] = useState<ConfluenceRecentPage[]>([]);
   const [confluenceLoading, setConfluenceLoading] = useState(false);
+  const [statModalConfig, setStatModalConfig] = useState<{ title: string; issues: JiraIssue[] } | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -165,7 +168,8 @@ export function DashboardClient() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ThemeSelector />
             <CreateConfluencePageModal />
             <Button
               variant="outline"
@@ -206,6 +210,7 @@ export function DashboardClient() {
                 sub="담당자로 할당된 이슈"
                 icon={CheckCircle}
                 iconColor="text-blue-500"
+                onClick={() => setStatModalConfig({ title: "내 미완료 이슈", issues: data.myOpenIssues })}
               />
               <StatCard
                 title="내가 보고한 이슈"
@@ -213,6 +218,7 @@ export function DashboardClient() {
                 sub="최근 30일"
                 icon={FileText}
                 iconColor="text-purple-500"
+                onClick={() => setStatModalConfig({ title: "내가 보고한 이슈", issues: data.myReportedIssues })}
               />
               <StatCard
                 title="마감 임박"
@@ -220,6 +226,7 @@ export function DashboardClient() {
                 sub={overdueCount > 0 ? `${overdueCount}개 기한 초과` : "이번 주 마감"}
                 icon={Clock}
                 iconColor={overdueCount > 0 ? "text-red-500" : "text-orange-500"}
+                onClick={() => setStatModalConfig({ title: "마감 임박", issues: data.dueSoonIssues })}
               />
               <StatCard
                 title="최근 활동"
@@ -227,6 +234,7 @@ export function DashboardClient() {
                 sub="최근 7일 업데이트"
                 icon={Activity}
                 iconColor="text-green-500"
+                onClick={() => setStatModalConfig({ title: "최근 활동", issues: data.recentActivityIssues })}
               />
               <StatCard
                 title="방치 이슈"
@@ -234,6 +242,7 @@ export function DashboardClient() {
                 sub={data.staleIssues.length > 0 ? `최장 ${formatStaleMax(data.staleIssues)}일` : "모든 이슈가 관리 중"}
                 icon={AlertTriangleIcon}
                 iconColor={data.staleIssues.length > 5 ? "text-red-500" : data.staleIssues.length > 0 ? "text-amber-500" : "text-green-500"}
+                onClick={() => setStatModalConfig({ title: "방치 이슈", issues: data.staleIssues })}
               />
             </div>
 
@@ -294,6 +303,13 @@ export function DashboardClient() {
             <ProjectStatsCard stats={data.projectStats} />
           </>
         ) : null}
+          <StatIssueModal
+            isOpen={!!statModalConfig}
+            onClose={() => setStatModalConfig(null)}
+            title={statModalConfig?.title ?? ""}
+            issues={statModalConfig?.issues ?? []}
+            jiraBaseUrl={JIRA_BASE_URL}
+          />
       </main>
     </div>
   );
