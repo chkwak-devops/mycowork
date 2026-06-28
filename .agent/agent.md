@@ -1,64 +1,64 @@
-# myCowork Harness Engineering Context
+# myCowork 하네스 엔지니어링 컨텍스트
 
-## 1. Project Overview & Architecture
-myCowork is a Next.js (App Router) based personal dashboard application that seamlessly integrates with Atlassian's Jira and Confluence (Data Center versions) to manage tasks, track metrics, and generate documentation.
+## 1. 프로젝트 개요 및 아키텍처
+myCowork는 Next.js (App Router) 기반의 개인 대시보드 애플리케이션으로, Atlassian의 Jira 및 Confluence (Data Center 버전)와 연동하여 업무를 관리하고 메트릭을 추적하며 문서를 생성합니다.
 
-- **Framework**: Next.js 16 (App Router, Server Actions, API Routes)
-- **Styling**: Tailwind CSS + Shadcn UI (Lucide Icons)
-- **State Management**: React Hooks (useState, useEffect, useCallback)
-- **API Communication**: Native fetch API pointing to Atlassian REST APIs (Jira API v2, Confluence API)
+- **프레임워크**: Next.js 16 (App Router, Server Actions, API Routes)
+- **스타일링**: Tailwind CSS + Shadcn UI (Lucide Icons)
+- **상태 관리**: React Hooks (useState, useEffect, useCallback)
+- **API 통신**: Atlassian REST API(Jira API v2, Confluence API) 대상 네이티브 fetch API
 
-## 2. Core Harness Capabilities (Agent Tooling Context)
-The following components define the core capabilities of the application:
+## 2. 핵심 하네스 기능 (에이전트 도구 컨텍스트)
 
-### A. Jira Integration (`lib/jira.ts`, `api/jira/*`)
-- **Credentials**: Uses `JIRA_BASE_URL` and `JIRA_PAT` for secure server-side fetching.
-- **Data Extracted**:
-  - Personal Information (`jiraGetMyself`)
-  - Issues search via JQL (`jiraSearch`)
-- **Key Metrics Aggregated**:
+### A. Jira 연동 (`lib/jira.ts`, `api/jira/*`)
+- **인증 정보**: `JIRA_BASE_URL`과 `JIRA_PAT`을 안전한 서버 사이드에서 사용
+- **추출 데이터**:
+  - 개인 정보 (`jiraGetMyself`)
+  - JQL 기반 이슈 검색 (`jiraSearch`)
+- **주요 집계 메트릭**:
   - `myOpenTotal`, `myReportedTotal`
-  - Due soon (Deadline-oriented tracking)
-  - Stale Issues (Neglected issue tracking)
-  - Priority distributions
+  - 마감 임박 (기한 중심 추적)
+  - 방치 이슈 (관리되지 않는 이슈 추적)
+  - 우선순위 분포
 
-### B. Confluence Integration (`lib/confluence.ts`, `api/confluence/*`)
-- **Credentials**: Uses `CONFLUENCE_BASE_URL` and `CONFLUENCE_PAT` (with fallback to `JIRA_PAT`).
-- **Data Extracted**:
-  - Spaces List (`getSpaces`)
-  - Pages within Spaces (`getPages`)
-  - Recent User Pages (`getMyRecentPages`)
-- **Mutation Action**:
-  - Page Creation (`createPage`): Converts simple Markdown/Text to Atlassian's storage format (HTML).
+### B. Confluence 연동 (`lib/confluence.ts`, `api/confluence/*`)
+- **인증 정보**: `CONFLUENCE_BASE_URL`과 `CONFLUENCE_PAT` 사용 (`JIRA_PAT`으로 폴백)
+- **추출 데이터**:
+  - 스페이스 목록 (`getSpaces`)
+  - 스페이스 내 페이지 (`getPages`)
+  - 최근 사용자 페이지 (`getMyRecentPages`)
+- **변경 작업**:
+  - 페이지 생성 (`createPage`): 일반 텍스트/Markdown을 Atlassian storage format(HTML)으로 변환
 
-### C. Client & UI Implementations (`components/dashboard/*`)
-- **Global Inactivity Tracker**: Implemented in `app/layout.tsx` + `components/inactivity-refresh.tsx` to force page reloads after 5 minutes of inactivity.
-- **Calendar View (`calendar-view.tsx`)**:
-  - Grid rendering of monthly issues based on `created`, `duedate`, or `resolutiondate`.
-  - Pagination offset resolved by querying limits (`maxResults: 300`).
-  - Interactive "See More" (`CalendarIssueModal`) to view overflow items.
-- **Top Metric Cards (`stat-card.tsx`)**:
-  - Visual summary of critical user metrics.
-  - Interactive drill-down to a list view (`StatIssueModal`) showing specific tickets related to that metric.
-- **Confluence Interop**: Modals and lists to bridge the gap between task tracking and documentation.
+### C. 클라이언트 및 UI 구현 (`components/dashboard/*`)
+- **글로벌 비활동 추적기**: `app/layout.tsx` + `components/inactivity-refresh.tsx` — 5분간 비활동 시 페이지 자동 새로고침
+- **캘린더 뷰 (`calendar-view.tsx`)**:
+  - `created`, `duedate`, `resolutiondate` 기준 월별 이슈 그리드 렌더링
+  - 조회 한도 설정으로 페이지네이션 해결 (`maxResults: 300`)
+  - 오버플로우 항목을 위한 대화형 "더보기" (`CalendarIssueModal`)
+- **상위 지표 카드 (`stat-card.tsx`)**:
+  - 주요 사용자 메트릭의 시각적 요약
+  - 해당 메트릭과 관련된 특정 티켓을 보여주는 목록 뷰(`StatIssueModal`)로의 대화형 드릴다운
+- **Confluence 상호 운용**: 업무 추적과 문서화 사이의 간극을 해소하는 모달 및 목록
 
-## 3. Harness Enhancement Log (Modifications Applied)
-- **[Feature] Global Inactivity Refresh**: Added global timer to refresh `window.location.reload()` after 5 minutes of no keyboard, mouse, or touch events.
-- **[Feature] Calendar Overflow UX**: Implemented a "+X 더보기" button and an overlay modal to support rendering >3 issues efficiently on specific calendar days.
-- **[Feature] Metric Drill-down UX**: Modified top-level `StatCard`s to respond to `onClick` events. Hooked up an `IssueListModal` to quickly preview Jira tickets within the metric category.
-- **[System] API Pagination Limits**: Bumped `maxResults` to `300` in `/api/jira/calendar/route.ts` to accommodate dense schedules.
+## 3. 하네스 개선 기록 (적용된 수정 사항)
+- **[기능] 글로벌 비활동 새로고침**: 키보드, 마우스, 터치 이벤트가 5분간 없으면 `window.location.reload()`를 실행하는 글로벌 타이머 추가
+- **[기능] 캘린더 오버플로우 UX**: 특정 날짜에 3건 초과 이슈가 있을 때 "+X 더보기" 버튼과 오버레이 모달 구현
+- **[기능] 메트릭 드릴다운 UX**: 상위 `StatCard`에 `onClick` 이벤트 연결, `IssueListModal`을 통해 메트릭 카테고리 내 Jira 티켓 미리보기
+- **[시스템] API 페이지네이션 한도**: `/api/jira/calendar/route.ts`의 `maxResults`를 `300`으로 상향 조정
 
-## 4. Agent Guidelines & Future Maintenance Constraints
-When AI Agents (Sisyphus or others) execute work in this repository, they MUST adhere to:
-1. **Security**: Never expose `JIRA_PAT` or `CONFLUENCE_PAT` to client-side components (`"use client"`). All Jira/Confluence API interaction must happen in `/lib` functions and be wrapped in `/api` routes.
-2. **UI Consistency**: Leverage Shadcn UI patterns. New overlays must use `Dialog` (`components/ui/dialog`), and new buttons should use the predefined `Button` variants.
-3. **Data Mutation Rules**: All changes/deletions must rely on server-side validations before proxying REST requests to Atlassian.
-4. **Codebase Hygiene**:
-   - Utilize `.env.local` for all environment tests.
-   - Refactor `any` types out aggressively. Current interfaces (`JiraIssue`, `ConfluencePage`) must be strictly typed.
-   - Ensure build integrity by firing `npm run build` after any structural modifications.
+## 4. 에이전트 가이드라인 및 향후 유지보수 제약 사항
+AI 에이전트(Sisyphus 등)가 이 저장소에서 작업을 수행할 때 반드시 준수해야 할 사항:
 
-## 5. Potential Future Roadmaps
-- **Bi-directional Sync**: Ability to update issue status or add comments directly from the dashboard modals.
-- **Caching & Rate Limit Safeguards**: Implement Redis or Next.js stable caching mechanisms to prevent throttling from Jira/Confluence REST endpoints.
-- **JQL Builder UI**: Advanced filtering UI dynamically parsing into JQL strings.
+1. **보안**: `JIRA_PAT` 또는 `CONFLUENCE_PAT`을 클라이언트 사이드 컴포넌트(`"use client"`)에 절대 노출하지 않음. 모든 Jira/Confluence API 상호 작용은 `/lib` 함수에서 이루어지고 `/api` 라우트로 감싸져야 함.
+2. **UI 일관성**: Shadcn UI 패턴을 활용. 새 오버레이는 `Dialog`(`components/ui/dialog`)를 사용하고, 새 버튼은 미리 정의된 `Button` variants를 사용해야 함.
+3. **데이터 변경 규칙**: 모든 변경/삭제는 Atlassian에 REST 요청을 프록시하기 전에 서버 사이드 검증에 의존해야 함.
+4. **코드베이스 위생**:
+   - 모든 환경 테스트는 `.env.local`을 활용
+   - `any` 타입은 적극적으로 리팩토링하여 제거. 현재 인터페이스(`JiraIssue`, `ConfluencePage`)는 엄격한 타입을 유지
+   - 구조적 변경 후에는 `npm run build`를 실행하여 빌드 무결성 확인
+
+## 5. 향후 로드맵
+- **양방향 동기화**: 대시보드 모달에서 직접 이슈 상태 업데이트 또는 댓글 추가 기능
+- **캐싱 및 속도 제한 보호**: Redis 또는 Next.js 안정적 캐싱 메커니즘을 도입하여 Jira/Confluence REST 엔드포인트 스로틀링 방지
+- **JQL 빌더 UI**: 동적으로 JQL 문자열로 파싱되는 고급 필터링 UI
