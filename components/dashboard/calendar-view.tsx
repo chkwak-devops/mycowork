@@ -3,6 +3,8 @@
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import type { CalendarIssue } from "@/app/api/jira/calendar/route";
 
+import { useState } from "react";
+import { CalendarIssueModal } from "./calendar-issue-modal";
 const JIRA_BASE_URL = process.env.NEXT_PUBLIC_JIRA_BASE_URL ?? "";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -74,6 +76,7 @@ export function CalendarView({
   const todayKey = getDateKey(today);
   const weeks = buildCalendarGrid(year, month);
 
+  const [selectedDate, setSelectedDate] = useState<{ key: string; issues: CalendarIssue[] } | null>(null);
   const issuesByDate = new Map<string, CalendarIssue[]>();
   for (const issue of issues) {
     const existing = issuesByDate.get(issue.calendarDate) ?? [];
@@ -171,14 +174,12 @@ export function CalendarView({
                       </a>
                     ))}
                     {dayIssues.length > 3 && (
-                      <div className="flex items-center gap-1 px-1">
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                        <span className="text-[10px] text-muted-foreground/50 ml-0.5">
-                          +{dayIssues.length - 3}
-                        </span>
-                      </div>
+                      <button
+                        onClick={() => setSelectedDate({ key, issues: dayIssues })}
+                        className="text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-center py-0.5 rounded transition-colors mt-0.5"
+                      >
+                        +{dayIssues.length - 3} 더보기
+                      </button>
                     )}
                   </div>
                 </div>
@@ -187,6 +188,14 @@ export function CalendarView({
           </div>
         ))}
       </div>
+
+      <CalendarIssueModal
+        isOpen={!!selectedDate}
+        onClose={() => setSelectedDate(null)}
+        dateKey={selectedDate?.key ?? ""}
+        issues={selectedDate?.issues ?? []}
+        jiraBaseUrl={JIRA_BASE_URL}
+      />
     </div>
   );
 }

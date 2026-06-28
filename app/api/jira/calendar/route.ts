@@ -28,17 +28,17 @@ export async function GET(request: NextRequest) {
       jiraSearch(
         `assignee = "${username}" AND created >= "${startOfMonth}" AND created <= "${endOfMonth}" ORDER BY created ASC`,
         undefined,
-        100
+        300
       ),
       jiraSearch(
         `assignee = "${username}" AND duedate >= "${startOfMonth}" AND duedate <= "${endOfMonth}" ORDER BY duedate ASC`,
         undefined,
-        100
+        300
       ),
       jiraSearch(
         `assignee = "${username}" AND resolutiondate >= "${startOfMonth}" AND resolutiondate <= "${endOfMonth}" ORDER BY resolutiondate ASC`,
         undefined,
-        100
+        300
       ),
     ]);
 
